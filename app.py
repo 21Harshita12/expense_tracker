@@ -269,13 +269,17 @@ else:
             background: linear-gradient(135deg, rgba(21, 27, 38, 0.85) 0%, rgba(30, 41, 59, 0.6) 100%);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 16px;
-            padding: 24px;
+            padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-top: 4px solid #00e676;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            min-height: 155px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
         .kpi-card:hover {
             background: linear-gradient(135deg, rgba(21, 27, 38, 0.95) 0%, rgba(30, 41, 59, 0.7) 100%);
@@ -284,18 +288,21 @@ else:
             box-shadow: 0 12px 40px 0 rgba(0, 230, 118, 0.2);
         }
         .kpi-label {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #8892b0;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
         .kpi-value {
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             font-weight: 800;
             color: #ffffff;
-            margin-top: 8px;
+            margin-top: 6px;
             letter-spacing: -0.5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .kpi-trend-up {
             color: #00e676;
