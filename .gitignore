@@ -1,0 +1,17 @@
+# Environment files
+.env
+
+# SQLite local database
+finance.db
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache / compiled bytecode
+__pycache__/
+*.pyc
+
+# Local Streamlit secrets
+.streamlit/secrets.toml
