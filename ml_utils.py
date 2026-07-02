@@ -155,10 +155,20 @@ def forecast_expenses(df_expenses: pd.DataFrame, months_to_predict: int = 3):
 
 def load_env_key():
     import os
+    # 1. Try OS environment (Streamlit Cloud maps secrets here automatically)
     key = os.getenv("GEMINI_API_KEY")
     if key:
         return key
-    # Try reading .env file in workspace
+        
+    # 2. Try Streamlit Secrets framework fallback
+    try:
+        import streamlit as st
+        if "GEMINI_API_KEY" in st.secrets:
+            return st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        pass
+        
+    # 3. Try reading local .env file in workspace
     try:
         env_path = os.path.join(os.path.dirname(__file__), ".env")
         if os.path.exists(env_path):
