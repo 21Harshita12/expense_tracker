@@ -95,6 +95,10 @@ if not st.session_state.logged_in:
             transform: translateY(-2px) !important;
             box-shadow: 0 8px 30px rgba(0, 230, 118, 0.05) !important;
         }
+        .landing-feature-card > div:last-child {
+            min-width: 0 !important;
+            flex: 1 1 0% !important;
+        }
         
         /* Styled custom instruction callouts */
         .guide-box {
@@ -105,13 +109,15 @@ if not st.session_state.logged_in:
             margin-top: 15px !important;
         }
 
-        /* Prevent all descendant divs and forms from stretching vertically on the login page */
-        .stMain .block-container div, .main .block-container div,
-        .stMain .block-container form, .main .block-container form {
+        /* Prevent columns, forms, and tabs from stretching vertically on the login page */
+        div[data-testid="column"], div[data-testid="stForm"], div[role="tabpanel"] {
             height: auto !important;
             min-height: unset !important;
-            flex-grow: 0 !important;
-            flex: none !important;
+        }
+
+        /* Hide default Streamlit input helper text ("Press Enter to submit") that overlaps with custom styles */
+        div[data-testid="InputInstructions"] {
+            display: none !important;
         }
 
         /* Set a clean spacing gap inside form blocks */
@@ -157,7 +163,6 @@ if not st.session_state.logged_in:
             background-color: rgba(255, 255, 255, 0.02) !important;
             border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
             border-radius: 12px !important;
-            padding: 5px 10px !important;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
         }
         div[data-baseweb="input"]:focus-within {
