@@ -180,6 +180,38 @@ def load_env_key():
         pass
     return None
 
+def call_gemini_api(url, payload, headers, max_retries=3, backoff_factor=1.5):
+    import urllib.request
+    import urllib.error
+    import json
+    import time
+    
+    last_err = None
+    for attempt in range(max_retries):
+        req = urllib.request.Request(
+            url, 
+            data=json.dumps(payload).encode("utf-8"), 
+            headers=headers,
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            last_err = e
+            if e.code in [429, 500, 502, 503, 504]:
+                time.sleep(backoff_factor ** attempt)
+                continue
+            else:
+                raise e
+        except Exception as e:
+            last_err = e
+            time.sleep(backoff_factor ** attempt)
+            continue
+            
+    if last_err:
+        raise last_err
+
 def generate_gemini_financial_advice(financial_data: dict) -> str:
     """
     Calls the Gemini API to get personalized AI financial advice.
@@ -229,17 +261,9 @@ Provide a structured, premium, and professional coaching report in markdown form
         "Content-Type": "application/json"
     }
     
-    req = urllib.request.Request(
-        url, 
-        data=json.dumps(payload).encode("utf-8"), 
-        headers=headers,
-        method="POST"
-    )
-    
     try:
-        with urllib.request.urlopen(req) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            return res_data["candidates"][0]["content"]["parts"][0]["text"]
+        res_data = call_gemini_api(url, payload, headers)
+        return res_data["candidates"][0]["content"]["parts"][0]["text"]
     except urllib.error.HTTPError as e:
         try:
             err_body = e.read().decode("utf-8")
@@ -310,21 +334,13 @@ def parse_receipt_image(image_bytes, mime_type, api_key=None) -> dict:
         "Content-Type": "application/json"
     }
     
-    req = urllib.request.Request(
-        url, 
-        data=json.dumps(payload).encode("utf-8"), 
-        headers=headers,
-        method="POST"
-    )
-    
     try:
-        with urllib.request.urlopen(req) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            text_response = res_data["candidates"][0]["content"]["parts"][0]["text"]
-            return {
-                "status": "success",
-                "data": json.loads(text_response)
-            }
+        res_data = call_gemini_api(url, payload, headers)
+        text_response = res_data["candidates"][0]["content"]["parts"][0]["text"]
+        return {
+            "status": "success",
+            "data": json.loads(text_response)
+        }
     except urllib.error.HTTPError as e:
         try:
             err_body = e.read().decode("utf-8")
@@ -463,17 +479,9 @@ Provide a premium, inspiring, and cleanly formatted report in Markdown. Use bull
         "Content-Type": "application/json"
     }
     
-    req = urllib.request.Request(
-        url, 
-        data=json.dumps(payload).encode("utf-8"), 
-        headers=headers,
-        method="POST"
-    )
-    
     try:
-        with urllib.request.urlopen(req) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            return res_data["candidates"][0]["content"]["parts"][0]["text"]
+        res_data = call_gemini_api(url, payload, headers)
+        return res_data["candidates"][0]["content"]["parts"][0]["text"]
     except urllib.error.HTTPError as e:
         try:
             err_body = e.read().decode("utf-8")
@@ -566,17 +574,9 @@ Keep your response concise, specific, and focused on helping the user address th
         "Content-Type": "application/json"
     }
     
-    req = urllib.request.Request(
-        url, 
-        data=json.dumps(payload).encode("utf-8"), 
-        headers=headers,
-        method="POST"
-    )
-    
     try:
-        with urllib.request.urlopen(req) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            return res_data["candidates"][0]["content"]["parts"][0]["text"]
+        res_data = call_gemini_api(url, payload, headers)
+        return res_data["candidates"][0]["content"]["parts"][0]["text"]
     except urllib.error.HTTPError as e:
         try:
             err_body = e.read().decode("utf-8")
