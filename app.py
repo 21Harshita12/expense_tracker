@@ -624,20 +624,14 @@ def show_dashboard(user_id):
     
     if df_inc.empty and df_exp.empty:
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, rgba(0, 230, 118, 0.05) 0%, rgba(0, 176, 255, 0.05) 100%); padding: 30px; border-radius: 16px; border: 1.5px dashed rgba(0, 230, 118, 0.3); margin-bottom: 25px; text-align: center; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);">
-            <div style="font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.4));">🚀</div>
-            <h3 style="margin: 0; color: #ffffff; font-weight: 700; font-size: 1.4rem;">Get Started with WealthFlow Demo Data</h3>
-            <p style="margin: 8px auto 20px auto; color: #8892b0; font-size: 0.95rem; line-height: 1.6; max-width: 600px;">
-                It looks like this profile doesn't have any transaction history yet! To immediately see the dynamic <b>Plotly graphs</b>, <b>Machine Learning forecasting models</b>, and <b>Gemini AI coaching reports</b> in action, click the button below to seed 6 months of mock transactions, budgets, and savings goals.
+        <div style="background: linear-gradient(135deg, rgba(0, 230, 118, 0.05) 0%, rgba(0, 176, 255, 0.05) 100%); padding: 30px; border-radius: 16px; border: 1.5px dashed rgba(255, 255, 255, 0.1); margin-bottom: 25px; text-align: center; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);">
+            <div style="font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.2));">📊</div>
+            <h3 style="margin: 0; color: #ffffff; font-weight: 700; font-size: 1.4rem;">Welcome to WealthFlow!</h3>
+            <p style="margin: 8px auto 0 auto; color: #8892b0; font-size: 0.95rem; line-height: 1.6; max-width: 600px;">
+                To get started, use the sidebar to log your first income or expense under <b>Transactions</b>, or upload a receipt to auto-extract transaction details. Once you enter data, your dashboard metrics and ML charts will populate automatically!
             </p>
         </div>
         """, unsafe_allow_html=True)
-        
-        if st.button("✨ Seed 6 Months of Financial Demo Data", key="seed_empty_dashboard", use_container_width=True, type="primary"):
-            with st.spinner("Seeding database with mock transactions, budgets, and goals..."):
-                db.generate_mock_data(user_id)
-            st.toast("🎉 Database successfully seeded with 6 months of historical transactions!", icon="🚀")
-            st.rerun()
             
     # Current month metrics
     current_month_str = datetime.now().strftime("%Y-%m")
@@ -1603,20 +1597,7 @@ def show_settings(user_id):
             st.success("Successfully signed out of all accounts.")
             st.rerun()
 
-    st.markdown("---")
-    st.subheader("⚙️ Data Tools")
-    st.markdown("""
-    <p style='color: #8892b0; font-size: 0.92rem; margin-bottom: 15px; line-height: 1.5;'>
-        Need to test the ML forecasting models and Gemini AI coach with rich, multi-month trends? 
-        Use the button below to seed 6 months of mock transactions, category budgets, and savings goals. 
-        <br/><strong style='color: #ff9800;'>⚠️ Warning:</strong> This will overwrite all existing transaction records for the current profile.
-    </p>
-    """, unsafe_allow_html=True)
-    if st.button("🚀 Regenerate & Seed 6-Month Demo Data", key="seed_settings_data", use_container_width=True):
-        with st.spinner("Clearing old records and seeding new mock data..."):
-            db.generate_mock_data(user_id)
-        st.toast("🎉 Account successfully populated with mock financial history!", icon="🚀")
-        st.rerun()
+
 
 # --- MAIN APP ROUTING ---
 
