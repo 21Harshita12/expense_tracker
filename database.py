@@ -2,80 +2,155 @@ import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta
 import random
+import os
+import streamlit as st
 
 DB_NAME = "finance.db"
 
+# 1. Detect if a PostgreSQL URL is configured in OS env or Streamlit Secrets
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    try:
+        if "DATABASE_URL" in st.secrets:
+            DATABASE_URL = st.secrets["DATABASE_URL"]
+    except Exception:
+        pass
+
+IS_POSTGRES = bool(DATABASE_URL)
+
 def get_connection():
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if IS_POSTGRES:
+        import psycopg2
+        import psycopg2.extras
+        # Use DictCursor by default for column-name dictionary matching
+        return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.DictCursor)
+    else:
+        conn = sqlite3.connect(DB_NAME)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+def execute_sql(cursor, query, params=None):
+    """Executes a parameterized SQL query, translating '?' to '%s' for Postgres compatibility."""
+    if IS_POSTGRES:
+        query = query.replace("?", "%s")
+    if params:
+        return cursor.execute(query, params)
+    return cursor.execute(query)
+
+def pd_read_sql(query, conn, params=None):
+    """Executes pd.read_sql_query, translating '?' to '%s' for Postgres compatibility."""
+    if IS_POSTGRES:
+        query = query.replace("?", "%s")
+    return pd.read_sql_query(query, conn, params=params)
 
 def init_db():
     """Initializes the database schema and creates tables if they don't exist."""
     conn = get_connection()
     cursor = conn.cursor()
     
-    # Enable foreign keys
-    cursor.execute("PRAGMA foreign_keys = ON;")
-    
-    # 1. Users Table
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL
-    );
-    """)
-    
-    # 2. Income Table
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS income (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        amount REAL NOT NULL,
-        source TEXT NOT NULL,
-        date TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    );
-    """)
-    
-    # 3. Expenses Table
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS expenses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        amount REAL NOT NULL,
-        category TEXT NOT NULL,
-        description TEXT,
-        date TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    );
-    """)
-    
-    # 4. Budgets Table
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS budgets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        category TEXT NOT NULL,
-        amount REAL NOT NULL,
-        UNIQUE(user_id, category),
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    );
-    """)
-    
-    # 5. Savings Goals Table
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS savings_goals (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        goal_name TEXT NOT NULL,
-        target_amount REAL NOT NULL,
-        current_amount REAL NOT NULL DEFAULT 0.0,
-        target_date TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    );
-    """)
+    if IS_POSTGRES:
+        # PostgreSQL Schema
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(100) UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL
+        );
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS income (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            source VARCHAR(255) NOT NULL,
+            date VARCHAR(20) NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS expenses (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            category VARCHAR(100) NOT NULL,
+            description TEXT,
+            date VARCHAR(20) NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS budgets (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            category VARCHAR(100) NOT NULL,
+            amount REAL NOT NULL,
+            UNIQUE(user_id, category),
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS savings_goals (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            goal_name VARCHAR(255) NOT NULL,
+            target_amount REAL NOT NULL,
+            current_amount REAL NOT NULL DEFAULT 0.0,
+            target_date VARCHAR(20) NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """)
+    else:
+        # SQLite Schema
+        cursor.execute("PRAGMA foreign_keys = ON;")
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL
+        );
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS income (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            source TEXT NOT NULL,
+            date TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT,
+            date TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS budgets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            category TEXT NOT NULL,
+            amount REAL NOT NULL,
+            UNIQUE(user_id, category),
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS savings_goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            goal_name TEXT NOT NULL,
+            target_amount REAL NOT NULL,
+            current_amount REAL NOT NULL DEFAULT 0.0,
+            target_date TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """)
     
     # Create indexes for performance
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_income_user ON income(user_id);")
@@ -93,14 +168,21 @@ def add_user(username, password_hash):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute(
-            "INSERT INTO users (username, password_hash) VALUES (?, ?);", 
-            (username.lower().strip(), password_hash)
-        )
+        if IS_POSTGRES:
+            cursor.execute(
+                "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING id;", 
+                (username.lower().strip(), password_hash)
+            )
+            user_id = cursor.fetchone()[0]
+        else:
+            cursor.execute(
+                "INSERT INTO users (username, password_hash) VALUES (?, ?);", 
+                (username.lower().strip(), password_hash)
+            )
+            user_id = cursor.lastrowid
         conn.commit()
-        user_id = cursor.lastrowid
         return user_id
-    except sqlite3.IntegrityError:
+    except Exception:
         return None
     finally:
         conn.close()
@@ -109,7 +191,7 @@ def get_user_by_username(username):
     """Fetches user details by username."""
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?;", (username.lower().strip(),))
+    execute_sql(cursor, "SELECT * FROM users WHERE username = ?;", (username.lower().strip(),))
     row = cursor.fetchone()
     conn.close()
     if row:
@@ -121,7 +203,8 @@ def get_user_by_username(username):
 def add_income(user_id, amount, source, date):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
+    execute_sql(
+        cursor,
         "INSERT INTO income (user_id, amount, source, date) VALUES (?, ?, ?, ?);",
         (user_id, amount, source.strip(), date)
     )
@@ -130,7 +213,7 @@ def add_income(user_id, amount, source, date):
 
 def get_incomes(user_id):
     conn = get_connection()
-    df = pd.read_sql_query(
+    df = pd_read_sql(
         "SELECT id, amount, source, date FROM income WHERE user_id = ? ORDER BY date DESC;",
         conn,
         params=(user_id,)
@@ -141,7 +224,7 @@ def get_incomes(user_id):
 def delete_income(income_id, user_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM income WHERE id = ? AND user_id = ?;", (income_id, user_id))
+    execute_sql(cursor, "DELETE FROM income WHERE id = ? AND user_id = ?;", (income_id, user_id))
     conn.commit()
     conn.close()
 
@@ -150,7 +233,8 @@ def delete_income(income_id, user_id):
 def add_expense(user_id, amount, category, description, date):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
+    execute_sql(
+        cursor,
         "INSERT INTO expenses (user_id, amount, category, description, date) VALUES (?, ?, ?, ?, ?);",
         (user_id, amount, category.strip(), description.strip(), date)
     )
@@ -159,7 +243,7 @@ def add_expense(user_id, amount, category, description, date):
 
 def get_expenses(user_id):
     conn = get_connection()
-    df = pd.read_sql_query(
+    df = pd_read_sql(
         "SELECT id, amount, category, description, date FROM expenses WHERE user_id = ? ORDER BY date DESC;",
         conn,
         params=(user_id,)
@@ -170,7 +254,7 @@ def get_expenses(user_id):
 def delete_expense(expense_id, user_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM expenses WHERE id = ? AND user_id = ?;", (expense_id, user_id))
+    execute_sql(cursor, "DELETE FROM expenses WHERE id = ? AND user_id = ?;", (expense_id, user_id))
     conn.commit()
     conn.close()
 
@@ -179,7 +263,7 @@ def delete_expense(expense_id, user_id):
 def set_budget(user_id, category, amount):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
+    execute_sql(cursor, """
         INSERT INTO budgets (user_id, category, amount) 
         VALUES (?, ?, ?)
         ON CONFLICT(user_id, category) 
@@ -191,7 +275,7 @@ def set_budget(user_id, category, amount):
 def get_budgets(user_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT category, amount FROM budgets WHERE user_id = ?;", (user_id,))
+    execute_sql(cursor, "SELECT category, amount FROM budgets WHERE user_id = ?;", (user_id,))
     rows = cursor.fetchall()
     conn.close()
     return {row['category']: row['amount'] for row in rows}
@@ -199,11 +283,12 @@ def get_budgets(user_id):
 def get_expenses_vs_budget(user_id):
     """
     Returns a dataframe comparing current month expenses with set budgets.
+    Works natively on both Postgres and SQLite.
     """
     conn = get_connection()
     current_month = datetime.now().strftime("%Y-%m")
     
-    # Query to fetch categories, budgets, and actual spent for the current month
+    # Universal SQL query using substr() instead of SQLite strftime()
     query = """
     SELECT 
         b.category,
@@ -212,11 +297,11 @@ def get_expenses_vs_budget(user_id):
     FROM budgets b
     LEFT JOIN expenses e ON b.user_id = e.user_id 
         AND b.category = e.category 
-        AND strftime('%Y-%m', e.date) = ?
+        AND substr(e.date, 1, 7) = ?
     WHERE b.user_id = ?
-    GROUP BY b.category;
+    GROUP BY b.category, b.amount;
     """
-    df = pd.read_sql_query(query, conn, params=(current_month, user_id))
+    df = pd_read_sql(query, conn, params=(current_month, user_id))
     conn.close()
     return df
 
@@ -225,7 +310,7 @@ def get_expenses_vs_budget(user_id):
 def add_savings_goal(user_id, goal_name, target_amount, current_amount, target_date):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
+    execute_sql(cursor, """
         INSERT INTO savings_goals (user_id, goal_name, target_amount, current_amount, target_date)
         VALUES (?, ?, ?, ?, ?);
     """, (user_id, goal_name.strip(), target_amount, current_amount, target_date))
@@ -235,7 +320,7 @@ def add_savings_goal(user_id, goal_name, target_amount, current_amount, target_d
 def update_savings_goal(goal_id, user_id, current_amount):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
+    execute_sql(cursor, """
         UPDATE savings_goals 
         SET current_amount = ? 
         WHERE id = ? AND user_id = ?;
@@ -246,13 +331,13 @@ def update_savings_goal(goal_id, user_id, current_amount):
 def delete_savings_goal(goal_id, user_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM savings_goals WHERE id = ? AND user_id = ?;", (goal_id, user_id))
+    execute_sql(cursor, "DELETE FROM savings_goals WHERE id = ? AND user_id = ?;", (goal_id, user_id))
     conn.commit()
     conn.close()
 
 def get_savings_goals(user_id):
     conn = get_connection()
-    df = pd.read_sql_query("""
+    df = pd_read_sql("""
         SELECT id, goal_name, target_amount, current_amount, target_date 
         FROM savings_goals 
         WHERE user_id = ? 
@@ -273,10 +358,10 @@ def generate_mock_data(user_id):
     
     try:
         # Clear existing data for this user
-        cursor.execute("DELETE FROM income WHERE user_id = ?;", (user_id,))
-        cursor.execute("DELETE FROM expenses WHERE user_id = ?;", (user_id,))
-        cursor.execute("DELETE FROM budgets WHERE user_id = ?;", (user_id,))
-        cursor.execute("DELETE FROM savings_goals WHERE user_id = ?;", (user_id,))
+        execute_sql(cursor, "DELETE FROM income WHERE user_id = ?;", (user_id,))
+        execute_sql(cursor, "DELETE FROM expenses WHERE user_id = ?;", (user_id,))
+        execute_sql(cursor, "DELETE FROM budgets WHERE user_id = ?;", (user_id,))
+        execute_sql(cursor, "DELETE FROM savings_goals WHERE user_id = ?;", (user_id,))
         
         # Define categories
         categories = ["Food", "Entertainment", "Education", "Shopping", "Bills & Utilities", "Other"]
@@ -291,7 +376,8 @@ def generate_mock_data(user_id):
             "Other": 200.0
         }
         for cat, amt in budgets.items():
-            cursor.execute(
+            execute_sql(
+                cursor,
                 "INSERT INTO budgets (user_id, category, amount) VALUES (?, ?, ?);",
                 (user_id, cat, amt)
             )
@@ -311,7 +397,8 @@ def generate_mock_data(user_id):
             # Monthly Incomes
             # Salary on 1st of month
             salary_date = current_date.strftime("%Y-%m-01")
-            cursor.execute(
+            execute_sql(
+                cursor,
                 "INSERT INTO income (user_id, amount, source, date) VALUES (?, ?, ?, ?);",
                 (user_id, 4500.0, "Salary", salary_date)
             )
@@ -319,31 +406,30 @@ def generate_mock_data(user_id):
             if random.random() > 0.3:
                 freelance_date = current_date.strftime("%Y-%m-15")
                 freelance_amt = round(random.uniform(500.0, 1200.0), 2)
-                cursor.execute(
+                execute_sql(
+                    cursor,
                     "INSERT INTO income (user_id, amount, source, date) VALUES (?, ?, ?, ?);",
                     (user_id, freelance_amt, "Freelance", freelance_date)
                 )
             # Dividend (every 3 months)
             if current_date.month in [1, 4, 7, 10]:
                 div_date = current_date.strftime("%Y-%m-20")
-                cursor.execute(
+                execute_sql(
+                    cursor,
                     "INSERT INTO income (user_id, amount, source, date) VALUES (?, ?, ?, ?);",
                     (user_id, 150.0, "Investment Dividend", div_date)
                 )
                 
             # Monthly Expenses (Categorized)
             for cat, budget_limit in budgets.items():
-                # Make some months overspend slightly and others underspend
-                # Food: stable
-                # Entertainment: variable
                 if cat == "Food":
-                    spent_factor = random.uniform(0.8, 1.1)  # $400 - $550
+                    spent_factor = random.uniform(0.8, 1.1)
                 elif cat == "Entertainment":
-                    spent_factor = random.uniform(0.4, 1.3)  # Overspends sometimes
+                    spent_factor = random.uniform(0.4, 1.3)
                 elif cat == "Shopping":
-                    spent_factor = random.uniform(0.6, 1.4)  # High variance
+                    spent_factor = random.uniform(0.6, 1.4)
                 elif cat == "Bills & Utilities":
-                    spent_factor = random.uniform(0.9, 1.05) # Fixed bills mostly
+                    spent_factor = random.uniform(0.9, 1.05)
                 else:
                     spent_factor = random.uniform(0.3, 1.0)
                     
@@ -357,7 +443,7 @@ def generate_mock_data(user_id):
                     day = random.randint(1, 28)
                     date_val = datetime(current_date.year, current_date.month, day)
                     if date_val > today:
-                        continue # Don't record future transactions
+                        continue
                     
                     if idx == num_transactions - 1:
                         tx_amt = round(remaining_spent, 2)
@@ -370,30 +456,30 @@ def generate_mock_data(user_id):
                     remaining_spent -= tx_amt
                     
                     desc = f"Monthly {cat} item {idx + 1}"
-                    cursor.execute(
+                    execute_sql(
+                        cursor,
                         "INSERT INTO expenses (user_id, amount, category, description, date) VALUES (?, ?, ?, ?, ?);",
                         (user_id, tx_amt, cat, desc, date_val.strftime("%Y-%m-%d"))
                     )
             
             # Move to next month
-            # Get next month's 1st day
             if current_date.month == 12:
                 current_date = datetime(current_date.year + 1, 1, 1)
             else:
                 current_date = datetime(current_date.year, current_date.month + 1, 1)
                 
         # Insert Savings Goals
-        cursor.execute("""
+        execute_sql(cursor, """
             INSERT INTO savings_goals (user_id, goal_name, target_amount, current_amount, target_date)
             VALUES (?, 'Emergency Fund', 10000.0, 6500.0, ?);
         """, (user_id, (today + timedelta(days=365)).strftime("%Y-%m-%d")))
         
-        cursor.execute("""
+        execute_sql(cursor, """
             INSERT INTO savings_goals (user_id, goal_name, target_amount, current_amount, target_date)
             VALUES (?, 'MacBook Pro', 2500.0, 1800.0, ?);
         """, (user_id, (today + timedelta(days=120)).strftime("%Y-%m-%d")))
         
-        cursor.execute("""
+        execute_sql(cursor, """
             INSERT INTO savings_goals (user_id, goal_name, target_amount, current_amount, target_date)
             VALUES (?, 'European Vacation', 5000.0, 1200.0, ?);
         """, (user_id, (today + timedelta(days=270)).strftime("%Y-%m-%d")))
