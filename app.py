@@ -175,8 +175,9 @@ if not st.session_state.logged_in:
             font-size: 1rem !important;
         }
 
-        /* Tabs selection switches - styled as an elegant segmented control */
-        div[role="tablist"] {
+        /* Radio segmented control selection switches styled as an elegant segmented control */
+        div[data-testid="stRadio"] > div[role="radiogroup"] {
+            flex-direction: row !important;
             background-color: rgba(255, 255, 255, 0.03) !important;
             border-radius: 30px !important;
             padding: 6px !important;
@@ -185,30 +186,37 @@ if not st.session_state.logged_in:
             justify-content: space-between !important;
             margin-bottom: 25px !important;
             gap: 5px !important;
+            width: 100% !important;
         }
-        button[data-baseweb="tab"] {
-            color: #8892b0 !important;
-            font-size: 0.95rem !important;
-            font-weight: 600 !important;
+        div[data-testid="stRadio"] > div[role="radiogroup"] > label {
+            flex-grow: 1 !important;
+            flex-basis: 0 !important;
             background: transparent !important;
             border: none !important;
             border-radius: 24px !important;
             padding: 8px 16px !important;
-            flex-grow: 1 !important;
             text-align: center !important;
+            cursor: pointer !important;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            box-shadow: none !important;
+            margin: 0 !important;
         }
-        button[data-baseweb="tab"][aria-selected="true"] {
+        div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.03) !important;
+        }
+        div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {
             background: linear-gradient(90deg, #00e676 0%, #00b0ff 100%) !important;
             color: #0b0c10 !important;
+            font-weight: 700 !important;
             box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3) !important;
         }
-        button[data-baseweb="tab"]:hover {
-            color: #ffffff !important;
-        }
-        /* Hide default BaseWeb tabs underline indicator */
-        div[role="tablist"] > div:not(button) {
+        div[data-testid="stRadio"] > div[role="radiogroup"] div[data-testid="stMarker"] {
             display: none !important;
+            visibility: hidden !important;
         }
 
         /* Full width login button */
@@ -449,9 +457,19 @@ def show_auth_page():
 
     # Helper function to render form block to avoid copy-pasting forms
     def render_forms():
-        tab1, tab2 = st.tabs(["🔑 Log In", "📝 Create Account"])
+        # Initialize selector state
+        if "auth_tab_selector" not in st.session_state:
+            st.session_state.auth_tab_selector = "🔑 Log In"
+            
+        auth_mode = st.radio(
+            "Auth Mode",
+            ["🔑 Log In", "📝 Create Account"],
+            label_visibility="collapsed",
+            horizontal=True,
+            key="auth_tab_selector"
+        )
         
-        with tab1:
+        if auth_mode == "🔑 Log In":
             with st.form("login_form"):
                 st.markdown("<h3 style='color: #ffffff; font-weight: 700; text-align: center; margin-bottom: 25px; font-size: 1.6rem;'>🔑 Sign In</h3>", unsafe_allow_html=True)
                 username = st.text_input("Username", placeholder="Enter username").strip()
@@ -474,7 +492,7 @@ def show_auth_page():
                         else:
                             st.error("Invalid username or password.")
                             
-        with tab2:
+        else:
             with st.form("register_form"):
                 st.markdown("<h3 style='color: #ffffff; font-weight: 700; text-align: center; margin-bottom: 25px; font-size: 1.6rem;'>📝 Register</h3>", unsafe_allow_html=True)
                 new_username = st.text_input("Choose Username", placeholder="e.g. johndoe").strip()
@@ -502,12 +520,9 @@ def show_auth_page():
                                     for cat in CATEGORIES:
                                         db.set_budget(user_id, cat, 300.0)
                                     
-                                    st.session_state.active_users[user_id] = new_username
-                                    st.session_state.logged_in = True
-                                    st.session_state.user_id = user_id
-                                    st.session_state.username = new_username
-                                    st.session_state.show_add_account = False
-                                    st.success("Account successfully created and logged in!")
+                                    # Switch back to Log In view programmatically
+                                    st.session_state.auth_tab_selector = "🔑 Log In"
+                                    st.session_state.success_toast = f"Account successfully created! Please sign in as {new_username}."
                                     st.rerun()
                                 else:
                                     st.error("An error occurred during registration. Please try again.")

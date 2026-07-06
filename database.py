@@ -7,8 +7,23 @@ import streamlit as st
 
 DB_NAME = "finance.db"
 
-# 1. Detect if a PostgreSQL URL is configured in OS env or Streamlit Secrets
+# 1. Detect if a PostgreSQL URL is configured in OS env or local .env or Streamlit Secrets
 DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    try:
+        env_path = os.path.join(os.path.dirname(__file__), ".env")
+        if os.path.exists(env_path):
+            with open(env_path, "r") as f:
+                for line in f:
+                    if line.startswith("DATABASE_URL="):
+                        DATABASE_URL = line.split("=", 1)[1].strip()
+                        # Clean surrounding quotes if any
+                        if DATABASE_URL.startswith(('"', "'")) and DATABASE_URL.endswith(('"', "'")):
+                            DATABASE_URL = DATABASE_URL[1:-1]
+                        break
+    except Exception:
+        pass
+
 if not DATABASE_URL:
     try:
         if "DATABASE_URL" in st.secrets:
@@ -17,6 +32,7 @@ if not DATABASE_URL:
         pass
 
 IS_POSTGRES = bool(DATABASE_URL)
+
 
 def get_connection():
     if IS_POSTGRES:
