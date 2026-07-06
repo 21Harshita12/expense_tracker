@@ -18,3 +18,5 @@ __pycache__/
 
 # Executables / Binaries
 supabase.exe
+
+.agents/
