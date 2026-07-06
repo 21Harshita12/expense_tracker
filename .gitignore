@@ -15,3 +15,6 @@ __pycache__/
 
 # Local Streamlit secrets
 .streamlit/secrets.toml
+
+# Executables / Binaries
+supabase.exe
