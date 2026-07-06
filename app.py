@@ -465,16 +465,21 @@ def show_auth_page():
     # Helper function to render form block to avoid copy-pasting forms
     def render_forms():
         # Initialize selector state
-        if "auth_tab_selector" not in st.session_state:
-            st.session_state.auth_tab_selector = "🔑 Log In"
+        if "auth_tab" not in st.session_state:
+            st.session_state.auth_tab = "🔑 Log In"
             
         auth_mode = st.radio(
             "Auth Mode",
             ["🔑 Log In", "📝 Create Account"],
+            index=0 if st.session_state.auth_tab == "🔑 Log In" else 1,
             label_visibility="collapsed",
-            horizontal=True,
-            key="auth_tab_selector"
+            horizontal=True
         )
+        
+        # Sync state if user clicked to switch
+        if auth_mode != st.session_state.auth_tab:
+            st.session_state.auth_tab = auth_mode
+            st.rerun()
         
         if auth_mode == "🔑 Log In":
             with st.form("login_form"):
@@ -528,7 +533,7 @@ def show_auth_page():
                                         db.set_budget(user_id, cat, 300.0)
                                     
                                     # Switch back to Log In view programmatically
-                                    st.session_state.auth_tab_selector = "🔑 Log In"
+                                    st.session_state.auth_tab = "🔑 Log In"
                                     st.session_state.success_toast = f"Account successfully created! Please sign in as {new_username}."
                                     st.rerun()
                                 else:
