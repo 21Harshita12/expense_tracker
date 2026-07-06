@@ -266,6 +266,13 @@ else:
                         #070a13 !important;
         }
 
+        /* Spacious top and bottom padding for a premium dashboard layout */
+        .stMain .block-container, .main .block-container {
+            padding-top: 4.5rem !important;
+            padding-bottom: 6rem !important;
+        }
+
+
         /* Standard top headers and footers for active dashboards */
         [data-testid="stHeader"], footer {
             display: block !important;
