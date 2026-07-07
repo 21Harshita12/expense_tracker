@@ -179,23 +179,59 @@ def init_db():
 
 # --- USER OPERATIONS ---
 
-def add_user(username, password_hash):
-    """Inserts a new user. Returns the user ID, or None if the username already exists."""
+def add_user(username, password_hash, default_categories=None):
+    """Inserts a new user and optionally seeds their default budgets.
+
+    Returns the user ID on success.
+    Returns None if username already exists (unique constraint).
+    """
     conn = get_connection()
     cursor = conn.cursor()
+    normalized_username = (username or "").lower().strip()
+
     try:
         if IS_POSTGRES:
             cursor.execute(
-                "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING id;", 
-                (username.lower().strip(), password_hash)
+                """
+                INSERT INTO users (username, password_hash)
+                VALUES (%s, %s)
+                ON CONFLICT (username) DO NOTHING
+                RETURNING id;
+                """,
+                (normalized_username, password_hash),
             )
-            user_id = cursor.fetchone()[0]
+            row = cursor.fetchone()
+            user_id = row[0] if row else None
         else:
             cursor.execute(
-                "INSERT INTO users (username, password_hash) VALUES (?, ?);", 
-                (username.lower().strip(), password_hash)
+                """
+                INSERT INTO users (username, password_hash)
+                VALUES (?, ?)
+                ON CONFLICT(username) DO NOTHING;
+                """,
+                (normalized_username, password_hash),
             )
-            user_id = cursor.lastrowid
+            # If insert succeeded, lastrowid is set; if conflict happened, it's unreliable.
+            # So we re-fetch by username.
+            if cursor.rowcount == 0:
+                user_id = None
+            else:
+                user_id = cursor.lastrowid
+
+        if user_id is None:
+            # Ensure we don't accidentally treat a duplicate as success.
+            return None
+
+        # Bulk seed default budgets in the same transaction to minimize connection overhead
+        if default_categories:
+            for cat in default_categories:
+                execute_sql(cursor, """
+                    INSERT INTO budgets (user_id, category, amount) 
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(user_id, category) 
+                    DO UPDATE SET amount = excluded.amount;
+                """, (user_id, cat.strip(), 300.0))
+
         conn.commit()
         return user_id
     except Exception:
@@ -205,9 +241,11 @@ def add_user(username, password_hash):
 
 def get_user_by_username(username):
     """Fetches user details by username."""
+    if not username:
+        return None
     conn = get_connection()
     cursor = conn.cursor()
-    execute_sql(cursor, "SELECT * FROM users WHERE username = ?;", (username.lower().strip(),))
+    execute_sql(cursor, "SELECT * FROM users WHERE LOWER(username) = LOWER(?);", (username.strip(),))
     row = cursor.fetchone()
     conn.close()
     if row:
@@ -341,6 +379,17 @@ def update_savings_goal(goal_id, user_id, current_amount):
         SET current_amount = ? 
         WHERE id = ? AND user_id = ?;
     """, (current_amount, goal_id, user_id))
+    conn.commit()
+    conn.close()
+
+def update_savings_goal_details(goal_id, user_id, goal_name, target_amount, target_date):
+    conn = get_connection()
+    cursor = conn.cursor()
+    execute_sql(cursor, """
+        UPDATE savings_goals
+        SET goal_name = ?, target_amount = ?, target_date = ?
+        WHERE id = ? AND user_id = ?;
+    """, (goal_name.strip(), target_amount, target_date, goal_id, user_id))
     conn.commit()
     conn.close()
 

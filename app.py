@@ -102,11 +102,13 @@ if not st.session_state.logged_in:
         
         /* Styled custom instruction callouts */
         .guide-box {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
-            border: 1px dashed rgba(255, 255, 255, 0.1) !important;
-            border-radius: 14px !important;
-            padding: 15px !important;
-            margin-top: 15px !important;
+            background: rgba(255, 255, 255, 0.02) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+            border-left: 3px solid #00e676 !important;
+            border-radius: 12px !important;
+            padding: 18px !important;
+            margin-top: 25px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
         }
 
         /* Prevent columns, forms, and tabs from stretching vertically on the login page */
@@ -175,20 +177,57 @@ if not st.session_state.logged_in:
             font-size: 1rem !important;
         }
 
-        /* Radio segmented control selection switches styled as an elegant segmented control */
-        div[data-testid="stRadio"] > div[role="radiogroup"] {
+        /* Force the Streamlit columns and vertical block to stretch to full width */
+        .stApp div[data-testid="column"] {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        .stApp div[data-testid="column"] > div {
+            width: 100% !important;
+            max-width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            align-self: stretch !important;
+        }
+
+        /* Force parent container of switcher to stretch */
+        .stApp div[class*="st-key-auth_mode_widget"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            display: block !important;
+        }
+
+        /* Force stRadio component wrapper to stretch */
+        .stApp div[class*="st-key-auth_mode_widget"] div[data-testid="stRadio"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            align-self: stretch !important;
+        }
+
+        /* Force radiogroup container to stretch */
+        .stApp div[class*="st-key-auth_mode_widget"] div[role="radiogroup"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            display: flex !important;
             flex-direction: row !important;
             background-color: rgba(255, 255, 255, 0.03) !important;
             border-radius: 30px !important;
             padding: 6px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            display: flex !important;
             justify-content: space-between !important;
             margin-bottom: 25px !important;
             gap: 5px !important;
-            width: 100% !important;
+            align-items: stretch !important;
+            align-self: stretch !important;
         }
-        div[data-testid="stRadio"] > div[role="radiogroup"] > label {
+
+        /* Stretch individual switcher buttons */
+        .stApp div[class*="st-key-auth_mode_widget"] div[role="radiogroup"] label {
             flex-grow: 1 !important;
             flex-basis: 0 !important;
             background: transparent !important;
@@ -203,18 +242,39 @@ if not st.session_state.logged_in:
             align-items: center !important;
             box-shadow: none !important;
             margin: 0 !important;
+            white-space: nowrap !important;
         }
-        div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover {
+
+        /* Styles for text hover */
+        .stApp div[class*="st-key-auth_mode_widget"] div[role="radiogroup"] label:hover p {
             color: #ffffff !important;
-            background-color: rgba(255, 255, 255, 0.03) !important;
         }
-        div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {
+
+        /* Highlight checked switcher tab */
+        .stApp div[class*="st-key-auth_mode_widget"] div[role="radiogroup"] label:has(input:checked) {
             background: linear-gradient(90deg, #00e676 0%, #00b0ff 100%) !important;
-            color: #0b0c10 !important;
-            font-weight: 700 !important;
             box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3) !important;
         }
-        div[data-testid="stRadio"] > div[role="radiogroup"] div[data-testid="stMarker"] {
+
+        /* Styling text for checked tab */
+        .stApp div[class*="st-key-auth_mode_widget"] div[role="radiogroup"] label:has(input:checked) p {
+            color: #0b0c10 !important;
+            font-weight: 700 !important;
+        }
+
+        /* Styling text for unchecked tab */
+        .stApp div[class*="st-key-auth_mode_widget"] div[role="radiogroup"] label:not(:has(input:checked)) p {
+            color: #8892b0 !important;
+        }
+
+        /* Hide radio circles */
+        .stApp div[class*="st-key-auth_mode_widget"] div[role="radiogroup"] label > div > div > div:first-child {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* Hide radio marker highlight */
+        .stApp div[class*="st-key-auth_mode_widget"] div[role="radiogroup"] div[data-testid="stMarker"] {
             display: none !important;
             visibility: hidden !important;
         }
@@ -373,16 +433,20 @@ else:
             width: 100% !important;
         }
         /* Hide the default "Navigate Menu" label at the top of the radio group */
-        div[data-testid="stRadio"] > label {
+        div[data-testid="stRadio"] [data-testid="stWidgetLabel"] {
             display: none !important;
         }
-        /* Hide the radio input circles */
+        /* Hide the radio input circles (compatibility for old/new Streamlit) */
         div[data-testid="stRadio"] div[data-testid="stMarker"] {
             display: none !important;
             visibility: hidden !important;
         }
+        div[data-testid="stRadio"] div[role="radiogroup"] label > div > div > div:first-child {
+            display: none !important;
+            visibility: hidden !important;
+        }
         /* Style the radio option labels */
-        div[data-testid="stRadio"] label {
+        div[data-testid="stRadio"] div[role="radiogroup"] label {
             background-color: rgba(255, 255, 255, 0.02) !important;
             border: 1px solid rgba(255, 255, 255, 0.06) !important;
             border-radius: 12px !important;
@@ -396,18 +460,25 @@ else:
             box-shadow: 0 4px 6px rgba(0,0,0,0.15) !important;
         }
         /* Hover state */
-        div[data-testid="stRadio"] label:hover {
+        div[data-testid="stRadio"] div[role="radiogroup"] label:hover {
             background-color: rgba(255, 255, 255, 0.04) !important;
             border-color: rgba(0, 230, 118, 0.2) !important;
             transform: translateX(4px) !important;
         }
         /* Selected/Active state */
-        div[data-testid="stRadio"] label:has(input:checked) {
+        div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
             background: linear-gradient(90deg, rgba(0, 230, 118, 0.1) 0%, rgba(0, 176, 255, 0.1) 100%) !important;
             border-color: #00e676 !important;
             color: #00e676 !important;
             font-weight: 700 !important;
             box-shadow: 0 0 15px rgba(0, 230, 118, 0.15) !important;
+        }
+        /* Style the label text inside the options */
+        div[data-testid="stRadio"] div[role="radiogroup"] label p {
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 0.95rem !important;
+            font-weight: 500 !important;
         }
         /* Reset label indentation */
         div[data-testid="stRadio"] label [data-testid="stMarkdownContainer"] {
@@ -465,27 +536,30 @@ def show_auth_page():
     # Helper function to render form block to avoid copy-pasting forms
     def render_forms():
         # Initialize selector state
-        if "auth_tab" not in st.session_state:
-            st.session_state.auth_tab = "🔑 Log In"
-            
+        if "auth_mode" not in st.session_state:
+            st.session_state.auth_mode = "Log In"
+        if "auth_mode_widget" not in st.session_state:
+            st.session_state.auth_mode_widget = st.session_state.auth_mode
+
+        pending_auth_mode = st.session_state.pop("auth_mode_request", None)
+        if pending_auth_mode is not None:
+            st.session_state.auth_mode = pending_auth_mode
+            st.session_state.auth_mode_widget = pending_auth_mode
+
         auth_mode = st.radio(
             "Auth Mode",
-            ["🔑 Log In", "📝 Create Account"],
-            index=0 if st.session_state.auth_tab == "🔑 Log In" else 1,
+            ["Log In", "Create Account"],
+            key="auth_mode_widget",
             label_visibility="collapsed",
             horizontal=True
         )
+        st.session_state.auth_mode = auth_mode
         
-        # Sync state if user clicked to switch
-        if auth_mode != st.session_state.auth_tab:
-            st.session_state.auth_tab = auth_mode
-            st.rerun()
-        
-        if auth_mode == "🔑 Log In":
+        if auth_mode == "Log In":
             with st.form("login_form"):
-                st.markdown("<h3 style='color: #ffffff; font-weight: 700; text-align: center; margin-bottom: 25px; font-size: 1.6rem;'>🔑 Sign In</h3>", unsafe_allow_html=True)
-                username = st.text_input("Username", placeholder="Enter username").strip()
-                password = st.text_input("Password", type="password", placeholder="Enter password")
+                st.markdown("<h3 style='color: #ffffff; font-weight: 700; text-align: center; margin-bottom: 25px; font-size: 1.6rem;'>Sign In</h3>", unsafe_allow_html=True)
+                username = st.text_input("Username", placeholder="Enter username", key="login_username").strip()
+                password = st.text_input("Password", type="password", placeholder="Enter password", key="login_password")
                 submitted = st.form_submit_button("Sign In", use_container_width=True)
                 
                 if submitted:
@@ -506,10 +580,10 @@ def show_auth_page():
                             
         else:
             with st.form("register_form"):
-                st.markdown("<h3 style='color: #ffffff; font-weight: 700; text-align: center; margin-bottom: 25px; font-size: 1.6rem;'>📝 Register</h3>", unsafe_allow_html=True)
-                new_username = st.text_input("Choose Username", placeholder="e.g. johndoe").strip()
-                new_password = st.text_input("Choose Password", type="password", placeholder="Min. 8 characters (A-Z, 0-9, !@#)")
-                confirm_password = st.text_input("Confirm Password", type="password", placeholder="Re-enter password")
+                st.markdown("<h3 style='color: #ffffff; font-weight: 700; text-align: center; margin-bottom: 25px; font-size: 1.6rem;'>Create Account</h3>", unsafe_allow_html=True)
+                new_username = st.text_input("Choose Username", placeholder="e.g. johndoe", key="register_username").strip()
+                new_password = st.text_input("Choose Password", type="password", placeholder="Min. 8 characters (A-Z, 0-9, !@#)", key="register_password")
+                confirm_password = st.text_input("Confirm Password", type="password", placeholder="Re-enter password", key="register_confirm_password")
                 submitted_reg = st.form_submit_button("Sign Up & Setup", use_container_width=True)
                 
                 if submitted_reg:
@@ -527,14 +601,15 @@ def show_auth_page():
                                 st.error("Username is already taken. Please choose another.")
                             else:
                                 pwd_hash = auth.hash_password(new_password)
-                                user_id = db.add_user(new_username, pwd_hash)
+                                user_id = db.add_user(new_username, pwd_hash, default_categories=CATEGORIES)
                                 if user_id:
-                                    for cat in CATEGORIES:
-                                        db.set_budget(user_id, cat, 300.0)
-                                    
-                                    # Switch back to Log In view programmatically
-                                    st.session_state.auth_tab = "🔑 Log In"
-                                    st.session_state.success_toast = f"Account successfully created! Please sign in as {new_username}."
+                                    # Log the user in automatically to bypass the extra login step
+                                    st.session_state.active_users[user_id] = new_username
+                                    st.session_state.logged_in = True
+                                    st.session_state.user_id = user_id
+                                    st.session_state.username = new_username
+                                    st.session_state.show_add_account = False
+                                    st.session_state.success_toast = f"Account successfully created! Welcome, {new_username}!"
                                     st.rerun()
                                 else:
                                     st.error("An error occurred during registration. Please try again.")
@@ -557,7 +632,7 @@ def show_auth_page():
         st.markdown("<h1 class='text-center' style='color: #00e676; margin-bottom: 5px; font-weight: 800; font-size: 2.8rem;'>💰 WealthFlow</h1>", unsafe_allow_html=True)
         st.markdown("<p class='text-center' style='color: #8892b0; font-size: 1.05rem; margin-bottom: 35px;'>Your Smart Personal Finance & ML Forecasting Companion</p>", unsafe_allow_html=True)
         
-        col_left, col_right = st.columns([1.1, 0.9])
+        col_left, col_right = st.columns([1.1, 0.9], gap="large")
         
         with col_left:
             st.markdown("""
@@ -1201,6 +1276,36 @@ def show_budgets_goals(user_id):
                                 db.update_savings_goal(goal_id, user_id, curr + contribute_val)
                                 st.session_state.success_toast = f"Recorded contribution of {format_currency(contribute_val)} to '{row['goal_name']}'!"
                                 st.rerun()
+                    with st.expander("Edit Goal", expanded=False):
+                        with st.form(f"edit_goal_form_{goal_id}"):
+                            edit_name = st.text_input("Goal Name", value=row['goal_name'], key=f"edit_name_{goal_id}")
+                            edit_target = st.number_input(
+                                "Target Amount (₹)",
+                                min_value=1.0,
+                                step=100.0,
+                                format="%.2f",
+                                value=float(targ),
+                                key=f"edit_target_{goal_id}"
+                            )
+                            try:
+                                edit_date_value = datetime.strptime(str(row['target_date']), "%Y-%m-%d").date()
+                            except ValueError:
+                                edit_date_value = date.today()
+                            edit_date = st.date_input("Target Date", value=edit_date_value, key=f"edit_date_{goal_id}")
+                            save_edit = st.form_submit_button("Save Changes", use_container_width=True)
+                            if save_edit:
+                                if not edit_name.strip():
+                                    st.error("Goal name is required.")
+                                else:
+                                    db.update_savings_goal_details(
+                                        goal_id,
+                                        user_id,
+                                        edit_name,
+                                        edit_target,
+                                        edit_date.strftime("%Y-%m-%d")
+                                    )
+                                    st.session_state.success_toast = f"Updated goal '{edit_name}' successfully!"
+                                    st.rerun()
                     with col_b2:
                         with st.popover("Delete Goal", use_container_width=True):
                             st.write("Confirm goal deletion?")
