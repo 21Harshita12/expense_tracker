@@ -326,17 +326,76 @@ else:
                         #070a13 !important;
         }
 
-        /* Spacious top and bottom padding for a premium dashboard layout */
-        .stMain .block-container, .main .block-container {
-            padding-top: 4.5rem !important;
-            padding-bottom: 6rem !important;
+        /* Hide Streamlit chrome that distracts from the product UI */
+        [data-testid="stHeader"], footer, .stDeployButton, [data-testid="stToolbar"], [data-testid="stDecoration"] {
+            display: none !important;
+            visibility: hidden !important;
         }
 
+        /* Spacious top and bottom padding for a premium dashboard layout */
+        .stMain .block-container, .main .block-container {
+            padding-top: 2.5rem !important;
+            padding-bottom: 6rem !important;
+            max-width: 1440px !important;
+        }
 
-        /* Standard top headers and footers for active dashboards */
-        [data-testid="stHeader"], footer {
-            display: block !important;
-            visibility: visible !important;
+        h1, h2, h3 {
+            letter-spacing: -0.04em !important;
+        }
+
+        h1 {
+            margin-bottom: 0.85rem !important;
+        }
+
+        div[data-testid="stAlert"] {
+            border-radius: 16px !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            background: rgba(15, 23, 42, 0.72) !important;
+            color: #d7e2f2 !important;
+        }
+
+        div[data-testid="stTabs"] button[role="tab"] {
+            border-radius: 999px !important;
+            padding: 0.55rem 1rem !important;
+            margin-right: 0.4rem !important;
+            color: #cbd5e1 !important;
+            background: rgba(255, 255, 255, 0.04) !important;
+        }
+
+        div[data-testid="stTabs"] button[aria-selected="true"] {
+            color: #07111f !important;
+            background: linear-gradient(90deg, #00e676 0%, #00b0ff 100%) !important;
+            font-weight: 800 !important;
+        }
+
+        input, textarea, div[data-baseweb="select"] > div {
+            border-radius: 12px !important;
+            background-color: rgba(15, 23, 42, 0.9) !important;
+            border-color: rgba(148, 163, 184, 0.22) !important;
+        }
+
+        div[data-testid="stDateInput"] small,
+        div[data-testid="stDateInput"] [aria-live="polite"] {
+            display: none !important;
+        }
+
+        button[kind="secondary"], .stButton button {
+            border-radius: 12px !important;
+            border: 1px solid rgba(255, 255, 255, 0.09) !important;
+            background: rgba(15, 23, 42, 0.72) !important;
+            color: #e2e8f0 !important;
+        }
+
+        button[kind="secondary"]:hover, .stButton button:hover {
+            border-color: rgba(0, 230, 118, 0.45) !important;
+            color: #00e676 !important;
+            transform: translateY(-1px) !important;
+        }
+
+        .stDataFrame, div[data-testid="stTable"] {
+            border-radius: 16px !important;
+            overflow: hidden !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
         }
 
         /* Premium glassmorphic metric cards */
@@ -431,6 +490,31 @@ else:
         /* Style the Sidebar Radio options as full-width menu buttons */
         div[data-testid="stRadio"] {
             width: 100% !important;
+        }
+        /* Make the radio group container full width */
+        div[data-testid="stRadio"] div[role="radiogroup"] {
+            width: 100% !important;
+        }
+        /* Remove sidebar content padding so buttons go edge-to-edge */
+        section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] > div {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        /* Restore padding inside each row but let the radio itself fill space */
+        section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] > div > div {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+        }
+        /* Make all direct child block containers of the sidebar full width */
+        section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] > div > div > div[data-testid="stVerticalBlock"] > div {
+            width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        /* But keep the radio button rows padded nicely */
+        section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] > div > div > div[data-testid="stVerticalBlock"] > div > div {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
         }
         /* Hide the default "Navigate Menu" label at the top of the radio group */
         div[data-testid="stRadio"] [data-testid="stWidgetLabel"] {
@@ -601,7 +685,7 @@ def show_auth_page():
                                 st.error("Username is already taken. Please choose another.")
                             else:
                                 pwd_hash = auth.hash_password(new_password)
-                                user_id = db.add_user(new_username, pwd_hash, default_categories=CATEGORIES)
+                                user_id = db.add_user(new_username, pwd_hash)
                                 if user_id:
                                     # Log the user in automatically to bypass the extra login step
                                     st.session_state.active_users[user_id] = new_username

@@ -222,16 +222,6 @@ def add_user(username, password_hash, default_categories=None):
             # Ensure we don't accidentally treat a duplicate as success.
             return None
 
-        # Bulk seed default budgets in the same transaction to minimize connection overhead
-        if default_categories:
-            for cat in default_categories:
-                execute_sql(cursor, """
-                    INSERT INTO budgets (user_id, category, amount) 
-                    VALUES (?, ?, ?)
-                    ON CONFLICT(user_id, category) 
-                    DO UPDATE SET amount = excluded.amount;
-                """, (user_id, cat.strip(), 300.0))
-
         conn.commit()
         return user_id
     except Exception:
