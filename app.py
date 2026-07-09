@@ -327,7 +327,7 @@ else:
         }
 
         /* Hide Streamlit chrome that distracts from the product UI */
-        [data-testid="stHeader"], footer, .stDeployButton, [data-testid="stToolbar"], [data-testid="stDecoration"] {
+        footer, .stDeployButton, [data-testid="stToolbar"], [data-testid="stDecoration"] {
             display: none !important;
             visibility: hidden !important;
         }
