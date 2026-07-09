@@ -474,6 +474,12 @@ else:
         section[data-testid="stSidebar"] {
             background-color: #0c1017 !important;
             border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
+            display: block !important;
+            visibility: visible !important;
+        }
+        [data-testid="stSidebar"] {
+            display: block !important;
+            visibility: visible !important;
         }
         
         .text-center-sidebar {
